@@ -12,10 +12,22 @@ from .search.hybrid import HybridRetriever
 
 DEFAULT_QRELS = Path("data/qrels.json")
 OUT_PATH = Path("data/metrics/experiments.csv")
+GIT_HEAD_PATH = Path(".git/HEAD")
 
 
 def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _read_commit_hash() -> str:
+    try:
+        head = GIT_HEAD_PATH.read_text(encoding="utf-8").strip()
+        if head.startswith("ref:"):
+            ref_path = head.split(" ", 1)[1].strip()
+            return Path(".git", ref_path).read_text(encoding="utf-8").strip()
+        return head
+    except Exception:
+        return "unknown"
 
 
 def _load_qrels(path: Path) -> List[Dict[str, Any]]:
@@ -57,6 +69,13 @@ def _recall_at_k(rels: List[int], k: int) -> float:
     return retrieved_rel / total_rel
 
 
+def _mrr_at_k(rels: List[int], k: int) -> float:
+    for i, rel in enumerate(rels[:k]):
+        if rel > 0:
+            return 1.0 / (i + 1)
+    return 0.0
+
+
 def _extract_doc_id(doc: Dict[str, Any]) -> str | None:
     return doc.get("doc_id") or doc.get("title")
 
@@ -67,6 +86,7 @@ def evaluate(qrels_path: Path = DEFAULT_QRELS, top_k: int = 10, alpha: float = 0
 
     ndcgs: List[float] = []
     recalls: List[float] = []
+    mrrs: List[float] = []
 
     for q in qrels:
         query = q.get("query")
@@ -82,11 +102,14 @@ def evaluate(qrels_path: Path = DEFAULT_QRELS, top_k: int = 10, alpha: float = 0
 
         ndcgs.append(_ndcg_at_k(rels, top_k))
         recalls.append(_recall_at_k(rels, top_k))
+        mrrs.append(_mrr_at_k(rels, top_k))
 
     avg_ndcg = sum(ndcgs) / len(ndcgs) if ndcgs else 0.0
     avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
 
-    return {"ndcg@10": avg_ndcg, "recall@10": avg_recall}
+    avg_mrr = sum(mrrs) / len(mrrs) if mrrs else 0.0
+
+    return {"ndcg@10": avg_ndcg, "recall@10": avg_recall, "mrr@10": avg_mrr}
 
 
 def _append_experiment(row: Dict[str, Any]) -> None:
@@ -104,8 +127,10 @@ def main() -> None:
     metrics = evaluate()
     row = {
         "timestamp": _timestamp(),
+        "commit": _read_commit_hash(),
         "ndcg@10": metrics["ndcg@10"],
         "recall@10": metrics["recall@10"],
+        "mrr@10": metrics["mrr@10"],
     }
     _append_experiment(row)
     print(json.dumps(row, ensure_ascii=True))
