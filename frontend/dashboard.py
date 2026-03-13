@@ -64,9 +64,12 @@ def _load_logs(db_path: Path) -> pd.DataFrame:
         )
         time_col = cols_lower.get("created_at") or cols_lower.get("timestamp")
 
+        result_col = cols_lower.get("result_count")
         select_cols = [query_col, latency_col]
         if time_col:
             select_cols.append(time_col)
+        if result_col:
+            select_cols.append(result_col)
 
         df = pd.read_sql_query(
             f"SELECT {', '.join(select_cols)} FROM {table}", conn
@@ -76,6 +79,7 @@ def _load_logs(db_path: Path) -> pd.DataFrame:
                 query_col: "query",
                 latency_col: "latency",
                 time_col or "": "timestamp",
+                result_col or "": "result_count",
             },
             inplace=True,
         )
@@ -86,6 +90,8 @@ def _load_logs(db_path: Path) -> pd.DataFrame:
         else:
             df["latency_seconds"] = df["latency"].astype(float)
 
+        if "result_count" not in df.columns:
+            df["result_count"] = pd.NA
         return df
     finally:
         conn.close()
@@ -136,14 +142,41 @@ def _render_kpi_page() -> None:
         st.info("No log data found. Ensure the SQLite log DB exists with query and latency columns.")
         return
 
+    p50 = df["latency_seconds"].quantile(0.50)
     p95 = df["latency_seconds"].quantile(0.95)
-    st.metric("p95 latency (s)", f"{p95:.4f}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("p50 latency (s)", f"{p50:.4f}")
+    with col2:
+        st.metric("p95 latency (s)", f"{p95:.4f}")
+
+    # Request volume over time (per minute).
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        df = df.dropna(subset=["timestamp"])
+        if not df.empty:
+            volume = df.set_index("timestamp").resample("1min").size()
+            st.subheader("Request Volume (per minute)")
+            st.line_chart(volume, height=220)
 
     top_queries = (
         df["query"].value_counts().reset_index().rename(columns={"index": "query", "query": "count"})
     )
     st.subheader("Top Queries")
     st.dataframe(top_queries.head(10), use_container_width=True)
+
+    # Zero-result queries.
+    if "result_count" in df.columns and df["result_count"].notna().any():
+        zero_df = df[df["result_count"] == 0]
+        if not zero_df.empty:
+            zero_queries = (
+                zero_df["query"]
+                .value_counts()
+                .reset_index()
+                .rename(columns={"index": "query", "query": "count"})
+            )
+            st.subheader("Zero-Result Queries")
+            st.dataframe(zero_queries.head(10), use_container_width=True)
 
 
 def _render_eval_page() -> None:
