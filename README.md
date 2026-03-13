@@ -49,6 +49,23 @@ Place `.txt` and `.md` files into:
 data/raw
 ```
 
+### Sample dataset (300+ docs)
+If you need a quick 300+ document corpus, you can generate a lightweight synthetic set:
+```bash
+python - <<'PY'
+from pathlib import Path
+base = Path("data/raw")
+base.mkdir(parents=True, exist_ok=True)
+for i in range(1, 301):
+    (base / f"doc_{i:03}.txt").write_text(
+        f"Sample document {i}\\nThis is synthetic content for evaluation and indexing.\\n",
+        encoding="utf-8",
+    )
+print("Wrote 300 docs to data/raw/")
+PY
+```
+This is only for testing; you can replace with any real dataset you want.
+
 Then run:
 ```bash
 python backend/app/ingest.py
