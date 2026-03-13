@@ -6,7 +6,31 @@ This project provides an end-to-end hybrid search system with:
 - FastAPI backend with metrics + logging
 - Streamlit dashboard for search, KPIs, and evaluation trends
 
-## 1) Setup
+## Quick start (recommended)
+
+1. Clone and enter the repo:
+```bash
+git clone https://github.com/sudhanshu1239g/assignment.git
+cd assignment
+```
+
+2. Add at least one `.txt` or `.md` file:
+```bash
+mkdir -p data/raw
+echo "Demo content for hybrid search." > data/raw/demo.txt
+```
+
+3. Run everything:
+```bash
+chmod +x up.sh
+./up.sh
+```
+
+4. Open in your browser:
+- Dashboard: `http://127.0.0.1:8501`
+- Backend health: `http://127.0.0.1:8000/health`
+
+## 1) Setup (manual)
 
 ```bash
 ./up.sh
@@ -18,7 +42,7 @@ This project provides an end-to-end hybrid search system with:
 - build indexes if missing
 - start FastAPI and Streamlit concurrently
 
-## 2) Data ingestion
+## 2) Data ingestion (manual)
 
 Place `.txt` and `.md` files into:
 ```
@@ -35,7 +59,7 @@ Output:
 data/processed/docs.jsonl
 ```
 
-## 3) Indexing
+## 3) Indexing (manual)
 
 BM25:
 ```bash
@@ -55,7 +79,7 @@ data/index/vector/docs.pkl
 data/index/vector/metadata.json
 ```
 
-## 4) FastAPI backend
+## 4) FastAPI backend (manual)
 
 Run:
 ```bash
@@ -72,7 +96,7 @@ Endpoints:
 data/metrics/logs.db
 ```
 
-## 5) Streamlit dashboard
+## 5) Streamlit dashboard (manual)
 
 Run:
 ```bash
