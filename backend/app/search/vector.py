@@ -62,6 +62,12 @@ class VectorIndex:
         faiss.normalize_L2(embeddings)
         dims = embeddings.shape[1]
 
+        # Avoid potential OpenMP issues on some macOS setups.
+        try:
+            faiss.omp_set_num_threads(1)
+        except Exception:
+            pass
+
         index = faiss.IndexFlatIP(dims)
         index.add(embeddings)
 

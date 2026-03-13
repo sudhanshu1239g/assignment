@@ -15,6 +15,11 @@ fi
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 
+# Limit threads to avoid OpenMP-related crashes on some systems.
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1
+
 if [[ ! -f "$REQ_FILE" ]]; then
   echo "requirements.txt not found at $REQ_FILE"
   echo "Create it with dependencies (fastapi, uvicorn, streamlit, pandas, rank-bm25, sentence-transformers, faiss-cpu)."
