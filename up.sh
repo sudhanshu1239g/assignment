@@ -24,6 +24,8 @@ fi
 echo "Installing dependencies from requirements.txt"
 pip install -r "$REQ_FILE"
 
+mkdir -p "$ROOT_DIR/data/raw" "$ROOT_DIR/data/processed" "$ROOT_DIR/data/index"
+
 DOCS_JSONL="$ROOT_DIR/data/processed/docs.jsonl"
 BM25_INDEX="$ROOT_DIR/data/index/bm25/bm25.pkl"
 VECTOR_INDEX="$ROOT_DIR/data/index/vector/index.faiss"
@@ -33,14 +35,23 @@ if [[ ! -f "$DOCS_JSONL" ]]; then
   python "$ROOT_DIR/backend/app/ingest.py"
 fi
 
-if [[ ! -f "$BM25_INDEX" ]]; then
-  echo "BM25 index missing; building"
-  python "$ROOT_DIR/backend/app/search/bm25.py"
-fi
+if [[ ! -f "$DOCS_JSONL" ]]; then
+  echo "Docs JSONL still missing; please add .txt/.md files to data/raw and rerun."
+else
+  DOC_COUNT=$(wc -l < "$DOCS_JSONL" | tr -d ' ')
+  if [[ "$DOC_COUNT" == "0" ]]; then
+    echo "Docs JSONL is empty; add files to data/raw and rerun to build indexes."
+  else
+  if [[ ! -f "$BM25_INDEX" ]]; then
+    echo "BM25 index missing; building"
+    python "$ROOT_DIR/backend/app/search/bm25.py"
+  fi
 
-if [[ ! -f "$VECTOR_INDEX" ]]; then
-  echo "Vector index missing; building"
-  python "$ROOT_DIR/backend/app/search/vector.py"
+  if [[ ! -f "$VECTOR_INDEX" ]]; then
+    echo "Vector index missing; building"
+    python "$ROOT_DIR/backend/app/search/vector.py"
+  fi
+  fi
 fi
 
 echo "Starting services..."

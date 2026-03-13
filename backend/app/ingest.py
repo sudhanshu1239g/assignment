@@ -28,14 +28,12 @@ def _created_at() -> str:
 
 
 def ingest() -> int:
-    if not RAW_DIR.exists():
-        return 0
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     files = sorted(
         [p for p in RAW_DIR.rglob("*") if p.is_file() and p.suffix.lower() in {".txt", ".md"}]
     )
-
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     count = 0
     with OUT_PATH.open("w", encoding="utf-8") as f:
