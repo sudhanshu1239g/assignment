@@ -1,0 +1,116 @@
+# Hybrid Search + KPI Dashboard
+
+This project provides an end-to-end hybrid search system with:
+- Data ingestion from local files
+- BM25 + vector retrieval and hybrid scoring
+- FastAPI backend with metrics + logging
+- Streamlit dashboard for search, KPIs, and evaluation trends
+
+## 1) Setup
+
+```bash
+./up.sh
+```
+
+`up.sh` will:
+- create `.venv`
+- install dependencies from `requirements.txt`
+- build indexes if missing
+- start FastAPI and Streamlit concurrently
+
+## 2) Data ingestion
+
+Place `.txt` and `.md` files into:
+```
+data/raw
+```
+
+Then run:
+```bash
+python backend/app/ingest.py
+```
+
+Output:
+```
+data/processed/docs.jsonl
+```
+
+## 3) Indexing
+
+BM25:
+```bash
+python backend/app/search/bm25.py
+```
+
+Vector:
+```bash
+python backend/app/search/vector.py
+```
+
+Outputs:
+```
+data/index/bm25/bm25.pkl
+data/index/vector/index.faiss
+data/index/vector/docs.pkl
+data/index/vector/metadata.json
+```
+
+## 4) FastAPI backend
+
+Run:
+```bash
+uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+```
+
+Endpoints:
+- `GET /health`
+- `POST /search`
+- `GET /metrics`
+
+`/search` logs to:
+```
+data/metrics/logs.db
+```
+
+## 5) Streamlit dashboard
+
+Run:
+```bash
+streamlit run frontend/dashboard.py
+```
+
+Pages:
+- Search: hybrid results + score breakdown
+- KPI: p95 latency + top queries from SQLite logs
+- Evaluation: nDCG trend from experiments.csv
+
+## 6) Evaluation
+
+Provide a `qrels.json` file at:
+```
+data/qrels.json
+```
+
+Format (list of queries):
+```json
+[
+  {"query": "example", "relevant": ["doc_id_1", "doc_id_2"]}
+]
+```
+
+Run:
+```bash
+python backend/app/eval.py
+```
+
+Appends metrics to:
+```
+data/metrics/experiments.csv
+```
+
+## Notes
+
+- All components are CPU-only.
+- Vector embeddings use `all-MiniLM-L6-v2`.
+- Hybrid score uses min-max normalization:
+  `alpha * norm_bm25 + (1 - alpha) * norm_vector`

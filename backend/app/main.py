@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import sqlite3
 import time
+from datetime import datetime, timezone
 from threading import Lock
 from typing import List, Dict, Any
 
@@ -12,6 +14,7 @@ from pydantic import BaseModel, Field
 from .search.hybrid import HybridRetriever
 
 VERSION = "0.1.0"
+LOG_DB_PATH = "data/metrics/logs.db"
 
 app = FastAPI(title="Hybrid Search API", version=VERSION)
 
@@ -28,6 +31,34 @@ def _update_metrics(latency_seconds: float) -> None:
         _metrics["search_count"] += 1
         _metrics["search_latency_sum"] += latency_seconds
         _metrics["search_latency_last"] = latency_seconds
+
+
+def _utc_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _log_search(query: str, top_k: int, alpha: float, latency_seconds: float) -> None:
+    conn = sqlite3.connect(LOG_DB_PATH)
+    try:
+        conn.execute(
+            \"\"\"
+            CREATE TABLE IF NOT EXISTS search_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT NOT NULL,
+                top_k INTEGER NOT NULL,
+                alpha REAL NOT NULL,
+                latency_seconds REAL NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            \"\"\"
+        )
+        conn.execute(
+            \"INSERT INTO search_logs (query, top_k, alpha, latency_seconds, created_at) VALUES (?, ?, ?, ?, ?)\",
+            (query, top_k, alpha, latency_seconds, _utc_timestamp()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _tokenize_query(text: str) -> List[str]:
@@ -100,6 +131,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
 
     latency = time.perf_counter() - start
     _update_metrics(latency)
+    _log_search(req.query, req.top_k, req.alpha, latency)
     return {
         "query": req.query,
         "top_k": req.top_k,
