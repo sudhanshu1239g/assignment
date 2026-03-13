@@ -87,6 +87,7 @@ def _log_search(
     result_count: int,
     error: str | None = None,
 ) -> None:
+    Path(LOG_DB_PATH).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(LOG_DB_PATH)
     try:
         _ensure_log_schema(conn)
