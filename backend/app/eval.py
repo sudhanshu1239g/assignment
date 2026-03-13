@@ -8,7 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any
 
-from .search.hybrid import HybridRetriever
+try:
+    from backend.app.search.hybrid import HybridRetriever
+except Exception:
+    from .search.hybrid import HybridRetriever
 
 DEFAULT_QRELS = Path("data/qrels.json")
 OUT_PATH = Path("data/metrics/experiments.csv")
