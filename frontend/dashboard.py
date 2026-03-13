@@ -179,9 +179,7 @@ def _render_kpi_page() -> None:
             st.subheader("Request Volume (per minute)")
             st.line_chart(volume, height=220)
 
-    top_queries = (
-        df["query"].value_counts().reset_index().rename(columns={"index": "query", "query": "count"})
-    )
+    top_queries = df["query"].value_counts().reset_index(name="count").rename(columns={"index": "query"})
     st.subheader("Top Queries")
     st.dataframe(top_queries.head(10), use_container_width=True)
 
@@ -189,11 +187,8 @@ def _render_kpi_page() -> None:
     if "result_count" in df.columns and df["result_count"].notna().any():
         zero_df = df[df["result_count"] == 0]
         if not zero_df.empty:
-            zero_queries = (
-                zero_df["query"]
-                .value_counts()
-                .reset_index()
-                .rename(columns={"index": "query", "query": "count"})
+            zero_queries = zero_df["query"].value_counts().reset_index(name="count").rename(
+                columns={"index": "query"}
             )
             st.subheader("Zero-Result Queries")
             st.dataframe(zero_queries.head(10), use_container_width=True)
