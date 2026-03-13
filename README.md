@@ -11,8 +11,20 @@ This project provides an end-to-end hybrid search system with:
 ```bash
 git clone https://github.com/sudhanshu1239g/assignment.git
 cd assignment
-mkdir -p data/raw
-echo "Demo content for hybrid search." > data/raw/demo.txt
+
+# Create a small dataset (300 docs)
+python - <<'PY'
+from pathlib import Path
+base = Path("data/raw")
+base.mkdir(parents=True, exist_ok=True)
+for i in range(1, 301):
+    (base / f"doc_{i:03}.txt").write_text(
+        f"Sample document {i}\nThis is synthetic content for evaluation and indexing.\n",
+        encoding="utf-8",
+    )
+print("Wrote 300 docs to data/raw/")
+PY
+
 chmod +x up.sh
 ./up.sh
 ```
@@ -20,6 +32,8 @@ chmod +x up.sh
 Open:
 - Dashboard: `http://127.0.0.1:8501`
 - Backend health: `http://127.0.0.1:8000/health`
+
+Suggested demo query: `document` (Top K = 5, Alpha = 0.5)
 
 ## 1) Setup (manual)
 
@@ -76,6 +90,10 @@ python backend/app/search/bm25.py
 
 Vector:
 ```bash
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1
+export TOKENIZERS_PARALLELISM=false
 python backend/app/search/vector.py
 ```
 
@@ -132,7 +150,7 @@ Format (list of queries):
 
 Run:
 ```bash
-python backend/app/eval.py
+PYTHONPATH=. python backend/app/eval.py
 ```
 
 Appends metrics to:
