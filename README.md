@@ -8,25 +8,16 @@ This project provides an end-to-end hybrid search system with:
 
 ## Quick start (recommended)
 
-1. Clone and enter the repo:
 ```bash
 git clone https://github.com/sudhanshu1239g/assignment.git
 cd assignment
-```
-
-2. Add at least one `.txt` or `.md` file:
-```bash
 mkdir -p data/raw
 echo "Demo content for hybrid search." > data/raw/demo.txt
-```
-
-3. Run everything:
-```bash
 chmod +x up.sh
 ./up.sh
 ```
 
-4. Open in your browser:
+Open:
 - Dashboard: `http://127.0.0.1:8501`
 - Backend health: `http://127.0.0.1:8000/health`
 
