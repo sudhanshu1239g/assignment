@@ -1,4 +1,4 @@
-"""Streamlit dashboard for search, KPIs, and evaluation trends."""
+"""Streamlit dashboard for search and KPIs."""
 
 from __future__ import annotations
 
@@ -19,7 +19,6 @@ if str(ROOT_DIR) not in sys.path:
 from backend.app.search.hybrid import HybridRetriever
 
 LOG_DB_PATH = Path("data/metrics/logs.db")
-EXPERIMENTS_CSV = Path("data/metrics/experiments.csv")
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 
 
@@ -194,31 +193,9 @@ def _render_kpi_page() -> None:
             st.dataframe(zero_queries.head(10), use_container_width=True)
 
 
-def _render_eval_page() -> None:
-    st.header("Evaluation")
-    st.caption(f"Experiments: {EXPERIMENTS_CSV}")
-
-    if not EXPERIMENTS_CSV.exists():
-        st.info("No experiments.csv found. Run backend/app/eval.py to generate metrics.")
-        return
-
-    df = pd.read_csv(EXPERIMENTS_CSV)
-    if df.empty or "ndcg@10" not in df.columns:
-        st.info("experiments.csv is missing nDCG data.")
-        return
-
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-    df = df.sort_values("timestamp")
-
-    st.subheader("nDCG@10 Trend")
-    st.line_chart(df.set_index("timestamp")["ndcg@10"], height=300)
-
-
-page = st.sidebar.selectbox("Page", ["Search", "KPI", "Evaluation"], index=0)
+page = st.sidebar.selectbox("Page", ["Search", "KPI"], index=0)
 
 if page == "Search":
     _render_search_page()
-elif page == "KPI":
-    _render_kpi_page()
 else:
-    _render_eval_page()
+    _render_kpi_page()

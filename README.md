@@ -4,7 +4,7 @@ This project provides an end-to-end hybrid search system with:
 - Data ingestion from local files
 - BM25 + vector retrieval and hybrid scoring
 - FastAPI backend with metrics + logging
-- Streamlit dashboard for search, KPIs, and evaluation trends
+- Streamlit dashboard for search and KPIs
 
 ## Quick start (recommended)
 
@@ -131,32 +131,7 @@ streamlit run frontend/dashboard.py
 
 Pages:
 - Search: hybrid results + score breakdown
-- KPI: p95 latency + top queries from SQLite logs
-- Evaluation: nDCG trend from experiments.csv
-
-## 6) Evaluation
-
-Provide a `qrels.json` file at:
-```
-data/qrels.json
-```
-
-Format (list of queries):
-```json
-[
-  {"query": "example", "relevant": ["doc_id_1", "doc_id_2"]}
-]
-```
-
-Run:
-```bash
-PYTHONPATH=. python backend/app/eval.py
-```
-
-Appends metrics to:
-```
-data/metrics/experiments.csv
-```
+- KPI: p50/p95 latency, request volume, top and zero-result queries
 
 ## Notes
 
