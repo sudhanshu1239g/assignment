@@ -21,8 +21,16 @@ if [[ ! -f "$REQ_FILE" ]]; then
   exit 1
 fi
 
-echo "Installing dependencies from requirements.txt"
-pip install -r "$REQ_FILE"
+HASH_FILE="$VENV_DIR/.requirements.sha256"
+REQ_HASH="$(shasum -a 256 "$REQ_FILE" | awk '{print $1}')"
+
+if [[ ! -f "$HASH_FILE" ]] || [[ "$(cat "$HASH_FILE")" != "$REQ_HASH" ]]; then
+  echo "Installing dependencies from requirements.txt"
+  pip install -r "$REQ_FILE"
+  echo "$REQ_HASH" > "$HASH_FILE"
+else
+  echo "Dependencies already installed; skipping pip install"
+fi
 
 mkdir -p "$ROOT_DIR/data/raw" "$ROOT_DIR/data/processed" "$ROOT_DIR/data/index"
 
