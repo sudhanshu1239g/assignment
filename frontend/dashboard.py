@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import sys
+import os
 import sqlite3
 from pathlib import Path
 from typing import Optional, Tuple, List
 
 import pandas as pd
+import requests
 import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -18,6 +20,7 @@ from backend.app.search.hybrid import HybridRetriever
 
 LOG_DB_PATH = Path("data/metrics/logs.db")
 EXPERIMENTS_CSV = Path("data/metrics/experiments.csv")
+API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 
 
 st.set_page_config(page_title="Hybrid Search Dashboard", layout="wide")
@@ -107,8 +110,25 @@ def _render_search_page() -> None:
         alpha = st.slider("Alpha", min_value=0.0, max_value=1.0, value=0.5, step=0.05)
 
     if st.button("Search") and query.strip():
-        retriever = _get_retriever(alpha)
-        results = retriever.query(query, top_k=int(top_k))
+        results = None
+        # Prefer API so searches get logged for KPI page.
+        try:
+            resp = requests.post(
+                f"{API_BASE_URL}/search",
+                json={"query": query, "top_k": int(top_k), "alpha": float(alpha)},
+                timeout=10,
+            )
+            if resp.ok:
+                payload = resp.json()
+                results = payload.get("results", [])
+            else:
+                st.warning("API search failed; falling back to local retriever.")
+        except Exception:
+            st.warning("API not reachable; falling back to local retriever.")
+
+        if results is None:
+            retriever = _get_retriever(alpha)
+            results = retriever.query(query, top_k=int(top_k))
 
         st.subheader("Results")
         if not results:
