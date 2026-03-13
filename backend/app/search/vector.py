@@ -54,6 +54,9 @@ class VectorIndex:
 
         model = self._get_model()
         embeddings = model.encode(texts, batch_size=32, show_progress_bar=False)
+        # Ensure float32 for faiss compatibility.
+        if embeddings.dtype != "float32":
+            embeddings = embeddings.astype("float32")
 
         # Normalize for cosine similarity with inner product.
         faiss.normalize_L2(embeddings)
@@ -97,6 +100,8 @@ class VectorIndex:
 
         model = self._get_model()
         embedding = model.encode([text], show_progress_bar=False)
+        if embedding.dtype != "float32":
+            embedding = embedding.astype("float32")
         faiss.normalize_L2(embedding)
 
         scores, indices = self._index.search(embedding, top_k)
