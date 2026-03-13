@@ -41,7 +41,7 @@ def _log_search(query: str, top_k: int, alpha: float, latency_seconds: float) ->
     conn = sqlite3.connect(LOG_DB_PATH)
     try:
         conn.execute(
-            \"\"\"
+            """
             CREATE TABLE IF NOT EXISTS search_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 query TEXT NOT NULL,
@@ -50,10 +50,10 @@ def _log_search(query: str, top_k: int, alpha: float, latency_seconds: float) ->
                 latency_seconds REAL NOT NULL,
                 created_at TEXT NOT NULL
             )
-            \"\"\"
+            """
         )
         conn.execute(
-            \"INSERT INTO search_logs (query, top_k, alpha, latency_seconds, created_at) VALUES (?, ?, ?, ?, ?)\",
+            "INSERT INTO search_logs (query, top_k, alpha, latency_seconds, created_at) VALUES (?, ?, ?, ?, ?)",
             (query, top_k, alpha, latency_seconds, _utc_timestamp()),
         )
         conn.commit()
